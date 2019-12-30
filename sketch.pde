@@ -1,26 +1,47 @@
-
+/* 
+ * The original processing.js version of 
+ * this script was made for
+ * #programalaplaza 2015
+ * and is available at:
+ * http://programalaplaza.medialab-prado.es/#/editor/d315eb0a-4670-44e9-a179-7f497d36fb8b
+ */
 /* Invasión de copos de nieve */
 /* José G. Moya Yangüela - Demasiado tarde para la edición de navidad--- */
 /* Pero lo vamos a intentar... */
 
 
 import android.app.WallpaperManager.*;
+// normal mode or menu:
 int modo=1;
+// user selected fps rate
 int fps=10;
+// max number of flakes
 int coposMax=255;
+// position of main menu button
 float btnleft,btntop,btnright,btnbottom;
+// center of screen
 float centerx;
  float centery;
  float angle[];
+// Array of snow flakes
 Copo copos[];
+// Array of (secondary) menu buttons
 Boton botones[];
+// Stored configuration default
 byte configuration[]={byte(coposMax),byte(fps)};
+// Configuration loaded from file
 byte conf2[];
+// Is preview?
+// This is needed since the 
+// wallpaperPreview function is false
+// after first mouse/touch event.
 boolean isPre=false;
+// Configuration file name
 String filename="configuration.dat";
 
 
 void setup (){
+  // Load stored configuration
     if ((conf2=loadBytes(filename))
         ==null){
       /* do nothing */
@@ -29,33 +50,50 @@ void setup (){
       coposMax=int(configuration[0]);
       fps=int(configuration[1]);
     }
+    // Get preview state and store it.
     isPre=wallpaperPreview();
+    // Get center.
     centerx=width/2;
     centery =height/2;
+    // Initialize copos with empty
     copos=new Copo[0];
+    // HSB so we can change bright without
+    // changing color.
     colorMode(HSB);
+    // Set framerate to stored fps
     frameRate(fps);
+    //Initialize button position
     btnleft=0;
     btntop=0;
     btnright=0;
     btnbottom=0;
  }
 
+
  void draw (){
   background(0);
     switch (modo) {
-      case 2: drawmenu();
+      
+      case 2:
+        // Menu mode. Draw menu and flakes
+        drawmenu();
       case 1:
-      default: drawcopo();
+      default:
+        // default mode. Draw flakes.
+        drawcopo();
       
     }
  }
  
+ // Draw flakes
  void drawcopo(){
    int f;
+   // Append a flake if less flakes than
+   // coposMax
    if (copos.length<coposMax){
     copos=(Copo[]) append(copos,new Copo(random(width),random(height),random(50)));
    }
+   
    for (f=0;f<copos.length;f++){
      /**/ copos[f].moverx(int((copos[f].lenmax/4)*cos(frameCount*PI/90)));
       copos[f].movery(int(abs(
@@ -80,14 +118,15 @@ void setup (){
     );
     */
     /* DEBUG END */
-  
+    // if is wallpaper preview and menu is
+    // not shown, shou menu button.
     if (modo==1 && isPre){
       menu();
     }
  }
 
 
-
+// Snow flake class
 class Copo{
    int colorH;
    int colorS;
@@ -95,32 +134,41 @@ class Copo{
    float cx;
    float cy;
    float lenmax;
+   // lenght of each segment.
+   int len[]={4,4,4,4};
+   
+   // Add distance to x
    void moverx(int dx){
      this.cx+=dx;
    }
+   
+   //Add distance to y
    void movery(int dy){
      this.cy+=dy;
    }
-  int len[]={4,4,4,4};
-
+  
+    // Constructor
     Copo(float icx,float icy,float ilenmax){
       this.colorH=int(random(255));
       this.colorS=int(random(255));
       this.colorB=100+int(random(100));
-     this.cx=icx;
-     this.cy=icy;
-     this.lenmax=ilenmax;
+      this.cx=icx;
+      this.cy=icy;
+      this.lenmax=ilenmax;
 
-
+    // Accumulated arm lenght
     int lenacum=0;
     lenacum =0;
     int l;
+    //Split desired lenght between
+    //4 parts
     for (l=0;l <4;l++){
         this.len [l]=int(random(0,this.lenmax-lenacum));
         lenacum+=len [l];
       }
     }
-   
+    
+    // draw flake
     void dibujar(){
       
       stroke(color(this.colorH,this.colorS,this.colorB));
@@ -145,12 +193,20 @@ class Copo{
   }
    
  }
+ 
+// Class to draw button and check its
+// position.
 class Boton {
   public float cx;
   public float cy; 
   public float radius;
   public String texto;
   public int code;
+  
+  // Constructor
+  // There is no draw method, since the object
+  // is re-constructed each frame, according
+  // to current screen size/orientation.
   Boton(String btext, float bx, float by, float bradius, int bcode){
     pushStyle();
     noFill();
@@ -160,6 +216,7 @@ class Boton {
     this.radius=bradius;
     this.texto=btext;
     this.code=bcode;
+    // Draw it
     ellipseMode(RADIUS);
     ellipse(this.cx, this.cy, this.radius, this.radius);
     fill(255);
@@ -167,6 +224,8 @@ class Boton {
     text(this.texto,cx,cy);
     popStyle();
   }
+  
+  // Check if xt and yt are inside button.
   public boolean check( float xt,float yt){
     if ( dist(xt, yt, this.cx, this.cy)< this.radius){
       return true;
@@ -175,6 +234,7 @@ class Boton {
   }
 }
 
+// Draw button to access menu.
 void menu(){
   fill(255);
   textAlign(RIGHT);
@@ -188,8 +248,12 @@ void menu(){
   noFill(); stroke(255);
   rect(btnleft, btntop,btnright,btnbottom);
 };
+
+// Draw configuration menu
 void drawmenu(){
   pushStyle();
+  
+  // Exit button
   fill(255);
   textAlign(RIGHT);
   textSize(24*displayDensity);
@@ -198,13 +262,12 @@ void drawmenu(){
   btntop=height-(textAscent()+150);
   btnright=width;
   btnbottom=height+textDescent()-150;
-  
   rectMode(CORNERS);
   noFill(); stroke(255);
   rect(btnleft, btntop,btnright,btnbottom);
+  
+  // Menu buttons and options
   textAlign(CENTER,CENTER);
-  
-  
   text("Max FPS: ", width/2, height/4);
   text(str(fps), width/2, height/4+2*textAscent());
   text("Real FPS: "+str(round(frameRate*10)/10), width/2, height/4+4*textAscent());
@@ -233,6 +296,9 @@ void mousePressed(){
   
   if (isPre==false) return;
   if (modo==2) {
+    // config menu.
+    // check whether button is clicked
+    // or not
     int code=-1;
     for (int f=0; f<botones.length; f++){
       if (botones[f].check(mouseX,mouseY)){
@@ -263,7 +329,9 @@ void mousePressed(){
       saveBytes(filename,configuration);
     }
   }
-  
+  // All modes.
+  // Check if button to enter/exit menu
+  // Has been checked.
   if (mouseX>=btnleft && mouseX <= (btnright)){
     if (mouseY>= btntop && mouseY<= (btnbottom)) {
       modo=(modo==2) ? 1 :2;
